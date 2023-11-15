@@ -169,7 +169,7 @@ impl AtomicFile {
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "redox")))]
 mod imp {
     use super::safe_parent;
 
@@ -275,6 +275,20 @@ mod imp {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(target_os = "redox")]
+mod imp {
+    use std::{fs, io, path};
+
+    pub fn replace_atomic(src: &path::Path, dst: &path::Path) -> io::Result<()> {
+        fs::rename(src, dst)
+    }
+
+    pub fn move_atomic(src: &path::Path, dst: &path::Path) -> io::Result<()> {
+        fs::hard_link(src, dst)?;
+        fs::remove_file(src)
     }
 }
 
